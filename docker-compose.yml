@@ -1,0 +1,25 @@
+services:
+  api:
+    build: .
+    command: flask run --host=0.0.0.0 --port=5000
+    ports:
+      - 8989:5000
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: celery -A app.celery worker --loglevel=INFO
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:6
+
