@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-import time, random
+import docker, tarfile, io
 
 from models import db, Image
 from factory import make_app, make_celery
@@ -62,13 +62,43 @@ def build_image(image_id):
     image.status = "building"
     db.session.commit()
 
-    # Build simulation
-    # TODO: build the image
-    time.sleep(5)
-    if random.random() < 0.9:
+    # Build the image
+    docker_client = docker.from_env()
+    dockerfile = f"""
+    FROM {image.base_image}
+    RUN apt-get update && apt-get install -y {' '.join(image.packages)} && rm -rf /var/lib/apt/lists/*
+    CMD ["bash"]
+    """
+    dockerfile_bytes = dockerfile.encode("utf-8")
+    dockerfile_stream = io.BytesIO()
+    with tarfile.open(fileobj=dockerfile_stream, mode="w") as tar:
+        tarinfo = tarfile.TarInfo(name="Dockerfile")
+        tarinfo.size = len(dockerfile_bytes)
+        tar.addfile(tarinfo, io.BytesIO(dockerfile_bytes))
+    dockerfile_stream.seek(0)  # ptr reset
+
+    docker_tag = f"container-factory/{image.id}:latests"
+
+    try:
+        # Build the image
+        docker_image, logs = docker_client.images.build(
+            fileobj=dockerfile_stream,
+            custom_context=True,
+            rm=True,
+            tag=docker_tag,
+            pull=True,
+            encoding="utf-8"
+        )
+
+        # Stream logs (optionnal)
+        for log in logs:
+            if "stream" in log:
+                print(log["stream"].strip())
+
         image.status = "ready"
-        image.docker_tag = f"container-factory/{image.id}:latest"
-    else:
+        image.docker_tag = docker_tag
+    except Exception as e:
+        print(str(e))
         image.status = "failed"
 
     db.session.commit()
