@@ -12,6 +12,8 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+# Required `base_image`
+# Optional `packages`, `tag`
 # POST /images → create a new image
 @app.route("/images", methods=["POST"])
 def create_image():
@@ -24,7 +26,7 @@ def create_image():
     db.session.commit()
 
     # Lancer le build asynchrone
-    build_image.delay(image.id)
+    build_image.delay(image.id, data.get("tag", "latest"))
 
     return jsonify({"id": image.id, "status": image.status}), 201
 
@@ -54,7 +56,7 @@ def get_image(id):
 
 
 @celery.task
-def build_image(image_id):
+def build_image(image_id: str, tag: str):
     image = Image.query.get(image_id)
     if not image:
         return
@@ -77,7 +79,7 @@ def build_image(image_id):
         tar.addfile(tarinfo, io.BytesIO(dockerfile_bytes))
     dockerfile_stream.seek(0)  # ptr reset
 
-    docker_tag = f"container-factory/{image.id}:latests"
+    image_name = f"container-factory/{image.id}:{tag}"
 
     try:
         # Build the image
@@ -85,7 +87,7 @@ def build_image(image_id):
             fileobj=dockerfile_stream,
             custom_context=True,
             rm=True,
-            tag=docker_tag,
+            tag=image_name,
             pull=True,
             encoding="utf-8"
         )
@@ -96,7 +98,7 @@ def build_image(image_id):
                 print(log["stream"].strip())
 
         image.status = "ready"
-        image.docker_tag = docker_tag
+        image.docker_tag = image_name
     except Exception as e:
         print(str(e))
         image.status = "failed"
