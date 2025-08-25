@@ -65,7 +65,7 @@ You have access to several request to the API. By default the API is accesssible
 
   > | http code     | content-type                      | response                                                                                             |
   > |---------------|-----------------------------------|------------------------------------------------------------------------------------------------------|
-  > | `200`         | `application/json`                | `[{"id": uuid, "base_image": string, "docker_tag": string, "packages": []string, "status": string}]` |
+  > | `200`         | `application/json`                | `[]{"id": uuid, "base_image": string, "docker_tag": string, "packages": []string, "status": string}` |
 
   ##### Example curl command
 
