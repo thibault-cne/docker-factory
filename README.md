@@ -96,3 +96,25 @@ You have access to several request to the API. By default the API is accesssible
   > $ curl -X GET http://localhost:8989/images/eaf62131-6a62-4c6c-9b94-c66cfde2d49a
   > ```
 </details>
+
+<details>
+  <summary><code>DELETE</code> <code><b>/images/{uuid}</b></code> <code>delete a specific image</code></summary>
+
+  ##### Parameters
+
+  > | name   |  type      | data type      | description                                                  |
+  > |--------|------------|----------------|--------------------------------------------------------------|
+  > | `uuid` |  required  | uuid           | The specific image unique idendifier                         | 
+
+  ##### Responses
+
+  > | http code     | content-type                      | response                             |
+  > |---------------|-----------------------------------|--------------------------------------|
+  > | `200`         | `application/json`                | `{"id": uuid, "status": string}`     |
+
+  ##### Example curl command
+
+  > ```command
+  > $ curl -X DELETE http://localhost:8989/images/eaf62131-6a62-4c6c-9b94-c66cfde2d49a
+  > ```
+</details>

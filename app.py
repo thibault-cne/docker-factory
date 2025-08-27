@@ -54,6 +54,19 @@ def get_image(id):
         "docker_tag": image.docker_tag
     })
 
+# DELETE /images/:id → delete a specific image
+@app.route("/images/<id>", methods=["DELETE"])
+def delete_image(id):
+    image = Image.query.get_or_404(id)
+
+    db.session.delete(image)
+    db.session.commit()
+    
+    return jsonify({
+        "id": image.id,
+        "status": "ok"
+    })
+
 
 @celery.task
 def build_image(image_id: str, tag: str):
